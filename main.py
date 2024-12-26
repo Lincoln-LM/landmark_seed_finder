@@ -225,7 +225,7 @@ if __name__ == "__main__":
                 if has_encounter:
                     encounter_slot = landmark_rng.next()  # TODO: handle alphas
                     fixed_seed = landmark_rng.next()
-                    level = landmark_rng.next_rand(level_max - level_min) + level_min
+                    level = landmark_rng.next_rand(level_max - level_min + 1) + level_min
                     (
                         shiny,
                         encryption_constant,
@@ -251,7 +251,7 @@ if __name__ == "__main__":
                         f"Encounter {advance=}: {shiny=} {level=} {encryption_constant=:08X} {pid=:08X}\n{ivs=} {ability=} {gender=} {nature=}\n{height=}\n{weight=}\n"
                     )
                 reward_count = (
-                    landmark_rng.next_rand(item_reward_max - item_reward_min)
+                    landmark_rng.next_rand(item_reward_max - item_reward_min + 1)
                     + item_reward_min
                 )
                 if has_encounter:
