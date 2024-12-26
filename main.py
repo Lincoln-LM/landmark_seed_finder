@@ -1,7 +1,13 @@
 import os
+import importlib
+import json
 import numpy as np
 import pyopencl as cl
 from numba_pokemon_prngs.data.personal import PERSONAL_INFO_LA, PersonalInfo8LA
+from numba_pokemon_prngs.data.encounter import ENCOUNTER_INFORMATION_LA
+from numba_pokemon_prngs.data.encounter.encounter_area_la import SlotLA
+from numba_pokemon_prngs.enums import LATime, LAWeather
+from numba_pokemon_prngs.data import SPECIES_EN
 from numba_pokemon_prngs.xorshift import Xoroshiro128PlusRejection
 from pla_pid_iv.util import (
     ec_pid_matrix,
@@ -11,7 +17,20 @@ from pla_pid_iv.util import (
 )
 from pla_pid_iv.util.pa8 import PA8
 import pla_pid_iv.pla_reverse.pla_reverse as pla_reverse
+import resources
 
+
+def get_name_en(species: int, form: int = 0, is_alpha: bool = False) -> str:
+    return f"{'Alpha ' if is_alpha else ''}{SPECIES_EN[species]}{f'-{form}' if form else ''}"
+
+
+MAPS = [
+    "obsidianfieldlands",
+    "crimsonmirelands",
+    "cobaltcoastlands",
+    "coronethighlands",
+    "alabastericelands",
+]
 
 os.environ["PYOPENCL_COMPILER_OUTPUT"] = "1"
 
@@ -19,7 +38,40 @@ if __name__ == "__main__":
     context = cl.create_some_context()
     queue = cl.CommandQueue(context)
 
-    mon: PA8 = np.fromfile(input("Pokemon dump filename: "), dtype=PA8.dtype).view(
+    for i, map_name in enumerate(MAPS):
+        print(f"{i}: {map_name}")
+    map_index = int(input("\nMap Index: "))
+    identifier = input("Landmark Identifier: ")
+
+    with (importlib.resources.files(resources) / f"{MAPS[map_index]}.json").open(
+        "r"
+    ) as f:
+        landmark_data = json.load(f)[identifier]
+
+    activation_rate = landmark_data["activationRate"]
+    item_reward_min = landmark_data["itemRewardMin"]
+    item_reward_max = landmark_data["itemRewardMax"]
+    multiple_unique_items = len(landmark_data["rewardTable"]) > 1
+    encounter_table = ENCOUNTER_INFORMATION_LA[map_index + 1][
+        landmark_data["encounterTable"]
+    ]
+
+    print(f"\nActivation Rate: {activation_rate}%")
+    print(f"Reward Count: {item_reward_min}-{item_reward_max}")
+
+    print("\nReward Table:")
+    for reward in landmark_data["rewardTable"]:
+        print(f"{reward['item']}: {reward['probability']}%")
+
+    print("\nEncounter Table:")
+    for slot in encounter_table.slots:
+        slot = np.rec.array(slot, dtype=SlotLA.dtype)
+        print(
+            f"{get_name_en(slot.species, slot.form, slot.is_alpha)} - Lv. {slot.min_level}-{slot.max_level}"
+        )
+    base_slot = np.rec.array(encounter_table.slots[0], dtype=SlotLA.dtype)
+
+    mon: PA8 = np.fromfile(input("\nPokemon dump filename: "), dtype=PA8.dtype).view(
         np.recarray
     )[0]
     personal_info: PersonalInfo8LA = PERSONAL_INFO_LA[mon.species]
@@ -35,12 +87,8 @@ if __name__ == "__main__":
         (mon.iv32 >> 15) & 0x1F,
     )
     shiny_rolls = int(input("Amount of Shiny Rolls: "))
-    activation_rate = int(input("Activation rate (10): ") or 10)
-    level_min = int(input("Minimum level (20): ") or 20)
-    level_max = int(input("Maximum level (23): ") or 23)
-    item_reward_min = int(input("Minimum item reward (4): ") or 4)
-    item_reward_max = int(input("Maximum item reward (5): ") or 5)
-    multiple_unique_items = bool(int(input("Multiple unique items (0/1) (0): ") or 0))
+    level_min = base_slot.min_level
+    level_max = base_slot.max_level
 
     fixed_seed_low = (mon.encryption_constant - 0x229D6A5B) & 0xFFFFFFFF
 
@@ -201,7 +249,6 @@ if __name__ == "__main__":
     valid_landmark_seeds = []
     for landmark_seed, fixed_seed in landmark_seeds:
         landmark_rng = Xoroshiro128PlusRejection(landmark_seed)
-        # TODO: pull these constants from landmark data
         has_encounter = landmark_rng.next_rand(100) < activation_rate
         if not has_encounter:
             continue
@@ -223,9 +270,18 @@ if __name__ == "__main__":
                 landmark_rng.re_init(landmark_seed)
                 has_encounter = landmark_rng.next_rand(100) < activation_rate
                 if has_encounter:
-                    encounter_slot = landmark_rng.next()  # TODO: handle alphas
+                    encounter_slot = encounter_table.calc_slot(
+                        landmark_rng.next() * 5.421010862427522e-20,
+                        np.int64(LATime.DAY),
+                        np.int64(LAWeather.SUNNY),
+                    )
                     fixed_seed = landmark_rng.next()
-                    level = landmark_rng.next_rand(level_max - level_min + 1) + level_min
+                    level = (
+                        landmark_rng.next_rand(
+                            encounter_slot.max_level - encounter_slot.min_level + 1
+                        )
+                        + encounter_slot.min_level
+                    )
                     (
                         shiny,
                         encryption_constant,
@@ -241,14 +297,14 @@ if __name__ == "__main__":
                         personal_info.gender_ratio,
                         shiny_rolls,
                         False,
-                        0,  # TODO: handle alphas
-                        False,
+                        3 if encounter_slot.is_alpha else 0,
+                        encounter_slot.is_alpha,
                         mon.tid | (mon.sid << np.uint32(16)),
                     )
                     if shiny:
                         shiny_found = True
                     result_file.write(
-                        f"Encounter {advance=}: {shiny=} {level=} {encryption_constant=:08X} {pid=:08X}\n{ivs=} {ability=} {gender=} {nature=}\n{height=}\n{weight=}\n"
+                        f"Encounter {advance=}: {get_name_en(encounter_slot.species, encounter_slot.form, encounter_slot.is_alpha)} {shiny=} {level=} {encryption_constant=:08X} {pid=:08X}\n{ivs=} {ability=} {gender=} {nature=}\n{height=}\n{weight=}\n"
                     )
                 reward_count = (
                     landmark_rng.next_rand(item_reward_max - item_reward_min + 1)
