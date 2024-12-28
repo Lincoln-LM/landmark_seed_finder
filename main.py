@@ -297,7 +297,7 @@ if __name__ == "__main__":
                         personal_info.gender_ratio,
                         shiny_rolls,
                         False,
-                        3 if encounter_slot.is_alpha else 0,
+                        encounter_slot.guaranteed_ivs,
                         encounter_slot.is_alpha,
                         mon.tid | (mon.sid << np.uint32(16)),
                     )
