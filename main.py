@@ -266,7 +266,7 @@ if __name__ == "__main__":
         landmark_rng = Xoroshiro128PlusRejection(0)
         advance = 0
         with open(result_file_path, "w+", encoding="utf-8") as result_file:
-            while not shiny_found:
+            while advance < 150 or not shiny_found:
                 landmark_rng.re_init(landmark_seed)
                 has_encounter = landmark_rng.next_rand(100) < activation_rate
                 if has_encounter:
