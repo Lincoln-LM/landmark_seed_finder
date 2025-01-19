@@ -276,12 +276,15 @@ if __name__ == "__main__":
                         np.int64(LAWeather.SUNNY),
                     )
                     fixed_seed = landmark_rng.next()
-                    level = (
-                        landmark_rng.next_rand(
-                            encounter_slot.max_level - encounter_slot.min_level + 1
+                    if encounter_slot.min_level != encounter_slot.max_level:
+                        level = (
+                            landmark_rng.next_rand(
+                                encounter_slot.max_level - encounter_slot.min_level + 1
+                            )
+                            + encounter_slot.min_level
                         )
-                        + encounter_slot.min_level
-                    )
+                    else:
+                        level = encounter_slot.min_level
                     (
                         shiny,
                         encryption_constant,
@@ -306,10 +309,13 @@ if __name__ == "__main__":
                     result_file.write(
                         f"Encounter {advance=}: {get_name_en(encounter_slot.species, encounter_slot.form, encounter_slot.is_alpha)} {shiny=} {level=} {encryption_constant=:08X} {pid=:08X}\n{ivs=} {ability=} {gender=} {nature=}\n{height=}\n{weight=}\n"
                     )
-                reward_count = (
-                    landmark_rng.next_rand(item_reward_max - item_reward_min + 1)
-                    + item_reward_min
-                )
+                if item_reward_min != item_reward_max:
+                    reward_count = (
+                        landmark_rng.next_rand(item_reward_max - item_reward_min + 1)
+                        + item_reward_min
+                    )
+                else:
+                    reward_count = item_reward_min
                 if has_encounter:
                     reward_count = 10
                 for _ in range(reward_count):
