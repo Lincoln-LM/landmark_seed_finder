@@ -57,7 +57,7 @@ MAPS = [
     "alabastericelands",
 ]
 
-genders_list = {0: "Male", 1: "Female"}
+genders_list = {0: "♂", 1: "♀", 2: "-"}
 
 natures_list = {
     0: "Hardy", 1: "Lonely", 2: "Brave", 3: "Adamant", 4: "Naughty", 5: "Bold",
