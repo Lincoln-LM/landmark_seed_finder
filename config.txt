@@ -1,0 +1,6 @@
+shiny_only = yes
+alpha_only = no
+max_advances = 5000
+min_advances = 150
+shiny_rolls = 7
+max_gap = 4
