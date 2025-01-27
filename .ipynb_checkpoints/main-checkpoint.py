@@ -28,7 +28,7 @@ def read_pa8_files():
         #Extract map index and ID from the file name (e.g. "0_0708")
         catch_number, map_index, id_number = file.split('-')
         id_number = id_number.split('.')[0]
-        file_info.append((int(map_index), id_number, file))
+        file_info.append((int(catch_number), int(map_index), id_number, file))
 
     return file_info
 
@@ -91,7 +91,7 @@ def process_pa8_files():
     file_info = read_pa8_files()
 
     #Loop over each pa8 file
-    for map_index, identifier, file_name in file_info:
+    for catch_number, map_index, identifier, file_name in file_info:
         print(f"\nProcessing {file_name} (Map: {map_index}, ID: {identifier})")
 
         try:
@@ -113,8 +113,7 @@ def process_pa8_files():
         item_reward_min = landmark_data["itemRewardMin"]
         item_reward_max = landmark_data["itemRewardMax"]
         multiple_unique_items = len(landmark_data["rewardTable"]) > 1
-        encounter_table = ENCOUNTER_INFORMATION_LA[map_index + 1]
-        [np.uint65(landmark_data["encounterTable"])]
+        encounter_table = ENCOUNTER_INFORMATION_LA[map_index + 1][np.uint64(landmark_data["encounterTable"])]
     
         print(f"\nProcessing Map: {MAPS[map_index]}")
         print(f"\nActivation Rate: {activation_rate}%")
@@ -132,7 +131,7 @@ def process_pa8_files():
             )
         base_slot = np.rec.array(encounter_table.slots[0], dtype=SlotLA.dtype)
     
-        mon: PA8 = np.fromfile(input("\nPokemon dump filename: "), dtype=PA8.dtype).view(
+        mon: PA8 = np.fromfile(file_name, dtype=PA8.dtype).view(
             np.recarray
         )[0]
         personal_info: PersonalInfo8LA = PERSONAL_INFO_LA[mon.species]
@@ -319,7 +318,8 @@ def process_pa8_files():
         print(f"{len(valid_landmark_seeds)} valid landmark seeds found")
         for i, landmark_seed in enumerate(valid_landmark_seeds):
             print(f"{i}: {landmark_seed=:016X}")
-            result_file_path = f"{landmark_seed:08X}.txt"
+            
+            result_file_path = f"{catch_number}-{map_index}-{identifier}-{landmark_seed:08X}.txt"
             print(f"Writing results to {result_file_path}")
 
             if look_for_shiny:
@@ -379,19 +379,19 @@ def process_pa8_files():
                         
                         if look_for_shiny and shiny:
                             shiny_found = True
-                            shiny_advance = advance - 1
+                            lookup_advance = advance - 1
                         if look_for_alpha and encounter_slot.is_alpha:
                             alpha_found = True
-                            alpha_advance  = advance - 1
+                            lookup_advance  = advance - 1
                         if look_for_shalpha and shiny and encounter_slot.is_alpha:
                             shalpha_found = True
-                            shalpha_advance = advance - 1
+                            lookup_advance = advance - 1
 
-                        gender_type = genders_list.get(gender, "unknown")
-                        nature_type = natures_list.get(nature, "unknown")
+                        gender_ = genders_list.get(gender, "unknown")
+                        nature_ = natures_list.get(nature, "unknown")
                         
                         result_file.write(
-                            f"Encounter {advance=}: {get_name_en(encounter_slot.species, encounter_slot.form, encounter_slot.is_alpha)} {shiny=} {level=} {encryption_constant=:08X} {pid=:08X}\n{ivs=} {ability=} {gender=} {nature=}\n{height=}\n{weight=}\n"
+                            f"Encounter {advance=}: {get_name_en(encounter_slot.species, encounter_slot.form, encounter_slot.is_alpha)} {shiny=} {level=} {encryption_constant=:08X} {pid=:08X}\n{ivs=} {ability=} {gender_=} {nature_=}\n{height=}\n{weight=}\n"
                         )
                     if item_reward_min != item_reward_max:
                         reward_count = (
@@ -409,9 +409,21 @@ def process_pa8_files():
                     landmark_seed = np.uint64(landmark_rng.next())
                     advance += 1
                     
-            print(f"Shiny found after {shiny_advance} advances" if (look_for_shiny and shiny_found) else "No shiny found.")
-            print(f"Alpha found after {alpha_advance} advances" if (look_for_alpha and alpha_found) else "No alpha found.")
-            print(f"Shiny alpha found after {shalpha_advance} advances" if (look_for_shalpha and shalpha_found) else "No shiny alpha found.")
+            if look_for_shiny:
+                if shiny_found:
+                    print(f"\nShiny found after {lookup_advance} advances")
+                else:
+                    print(f"\nNo shiny found, reached max advances.")
+            if look_for_alpha:
+                if alpha_found:
+                    print(f"\nAlpha found after {lookup_advance} advances")
+                else:
+                    print(f"\nNo alpha found, reached max advances.")
+            if look_for_shalpha:
+                if shalpha_found:
+                    print(f"\nShiny alpha found after {lookup_advance} advances")
+                else:
+                    print(f"\nNo shiny alpha found, reached max advances.")
 
 if __name__ == "__main__":
     process_pa8_files()
