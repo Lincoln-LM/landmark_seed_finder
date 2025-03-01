@@ -1,0 +1,1 @@
+https://github.com/kwsch/PKHeX/tree/master/PKHeX.Core/Resources/byte/personal

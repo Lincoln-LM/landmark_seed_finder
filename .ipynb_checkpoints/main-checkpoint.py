@@ -23,6 +23,7 @@ import resources
 def read_pa8_files():
     pa8_files = glob.glob("*.pa8")
     file_info = []
+    log_file = 'log.xlsx'
 
     for file in pa8_files:
         #Extract map index and ID from the file name (e.g. "0_0708")
@@ -338,7 +339,7 @@ def process_pa8_files():
             landmark_rng = Xoroshiro128PlusRejection(0)
             advance = 0
             with open(result_file_path, "w+", encoding="utf-8") as result_file:
-                while (advance < min_advances) or not ((advance > max_advances) or (shiny_found and alpha_found and shalpha_found)):
+                while (advance < max_advances):
                     landmark_rng.re_init(landmark_seed)
                     has_encounter = landmark_rng.next_rand(100) < activation_rate
                     if has_encounter:
