@@ -1,1 +1,0 @@
-"""Flatbuffer utility"""
