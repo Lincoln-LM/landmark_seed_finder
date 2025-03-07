@@ -1,22 +1,28 @@
 # landmark-seed-finder
 
-Changes compared to the original version:
+## Pokemon: Legends Arceus landmark (tree/rock) seed finder from a PA8 dumps of pokemon
 
--Iterates over each .pa8 file in the folder. .pa8 files need to have a certain format: [order caught]-[map index]-[map ID],
-	e.g.: 0-0-0807.pa8 would be first Pokémon caught (0), on map Obsidian fieldlands (0) with map ID 0807.
+- Usage:
+	- Place .pa8 files next to executable (.exe or .py) with the name format ``[Order Caught]-[Map Index]-[Landmark ID].pa8``
+		- E.g.: 0-0-0807.pa8 would be first Pokémon caught (0), on map Obsidian Fieldlands (0) with map ID 0807.
 
-	The list of maps with their respective IDs are as follows:
-		0: Obsidian fieldlands
-		1: Crimson mirelands
-		2: Cobalt coastlands
-		3: Coronet highlands
-		4: Alabaster icelands
+		- Map indexes:
+			- 0: Obsidian Fieldlands
+			- 1: Crimson Mirelands
+			- 2: Cobalt Coastlands
+			- 3: Coronet Highlands
+			- 4: Alabaster Icelands
 
-	For the map ID of the landmark, please refer to this link:
-		https://lincoln-lm.github.io/JS-Finder/Gen8/PLA-Landmark-Map/
+		- Landmark ID: https://lincoln-lm.github.io/JS-Finder/Gen8/PLA-Landmark-Map/
 
--Added a config.txt for the user to select their own preferences:
-	-Searching specifically for only shiny, only alpha or both
-	-Selecting minimum or maximum advances
-
--Changed the output to display gender and natures in full letters
+	- Edit config.toml (text file) to specify the settings to search for each landmark
+		- ``shiny_only``
+			- Whether or not to filter for shinies (true, false)
+		- ``alpha_only``
+			- Whether or not to filter for alphas (true, false)
+		- ``max_advances``
+			- Maximum number of advances to check (integer)
+		- ``shiny_rolls``
+			- Number of shiny rolls the pokemon generate with (integer)
+		- ``max_gap``
+			- Maximum gap between landmark & fixed seeds to check (leave at 4 unless you know what youre doing) (integer)

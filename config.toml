@@ -1,0 +1,10 @@
+# whether or not to filter for shinies (true, false)
+shiny_only = true
+# whether or not to filter for alphas (true, false)
+alpha_only = false
+# maximum number of advances to check (integer)
+max_advances = 5000
+# number of shiny rolls the pokemon generate with (integer)
+shiny_rolls = 7
+# maximum gap between landmark & fixed seeds to check (leave at 4 unless you know what youre doing) (integer)
+max_gap = 4
